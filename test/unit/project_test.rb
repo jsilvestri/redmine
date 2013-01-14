@@ -136,6 +136,35 @@ class ProjectTest < ActiveSupport::TestCase
     assert_kind_of Issue, Project.find(1).issues.open.first
   end
 
+  # Ensure the issues from the project and subproject are includ3ed
+  def test_issues_and_subproject_issues_usual_case
+    parent = Project.create!(:name => 'Parent', :identifier => 'parent')
+    project_sub1 = Project.create!(:name => 'Project Sub1', :identifier => 'project-sub1')
+    project_sub1.set_parent!(parent)
+    project_sub2 = Project.create!(:name => 'Project Sub2', :identifier => 'project-sub2')
+    project_sub2.set_parent!(parent)
+
+    # create parent project issues
+    issues = (0..2).to_a.map {Issue.create!(:project_id => parent.id, :tracker_id => 1, :author_id => 1, :subject => 'test')}
+    # create child project issues
+    issues = (0..3).to_a.map {Issue.create!(:project_id => project_sub1.id, :tracker_id => 1, :author_id => 1, :subject => 'test')}
+    issues = (0..1).to_a.map {Issue.create!(:project_id => project_sub2.id, :tracker_id => 1, :author_id => 1, :subject => 'test')}
+
+    correct_issues = Project.find(parent.id).issues + Project.find(project_sub1.id).issues + Project.find(project_sub2.id).issues
+    function_result = Project.find(parent.id).issues_and_subproject_issues 
+
+    assert_equal correct_issues.size, function_result.size
+  end
+
+  # Ensure this function still works if there are no sub-projects
+  def test_issues_and_subproject_issues_default_case
+    lone_project = Project.create!(:name => 'Lone project', :identifier => 'loneproject')
+    issues = (0..2).to_a.map {Issue.create!(:project_id => lone_project.id, :tracker_id => 1, :author_id => 1, :subject => 'test')}
+    lone_project_issues = Project.find(lone_project.id).issues
+
+    assert_equal lone_project_issues, Project.find(lone_project.id).issues_and_subproject_issues 
+  end
+
   def test_archive
     user = @ecookbook.members.first.user
     @ecookbook.archive

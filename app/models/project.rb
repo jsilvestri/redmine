@@ -279,6 +279,7 @@ class Project < ActiveRecord::Base
 
   def reload(*args)
     @shared_versions = nil
+    @issues_and_subproject_issues = nil
     @rolled_up_versions = nil
     @rolled_up_trackers = nil
     @all_issue_custom_fields = nil
@@ -391,6 +392,23 @@ class Project < ActiveRecord::Base
       # Can not move to the given target
       false
     end
+  end
+
+
+  # Returns all issues of this project and sub-projects, as long as one has permissions
+  def issues_and_subproject_issues
+    @issues_and_subproject_issues ||= nil
+    unless @issues_and_subproject_issues
+      visible_projects = []
+      self_and_descendants.each do |project|
+        if project.allows_to?(:view_issues)
+          visible_projects << project.id
+        end
+      end
+      @issues_and_subproject_issues = Issue.where(project_id: visible_projects)
+    end
+
+    @issues_and_subproject_issues 
   end
 
   # Returns an array of the trackers used by the project and its active sub projects
