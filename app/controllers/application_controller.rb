@@ -434,7 +434,7 @@ class ApplicationController < ActionController::Base
   # on the paginated list
   def per_page_option
     per_page = nil
-    if params[:per_page] && Setting.per_page_options_array.include?(params[:per_page].to_s.to_i)
+    if params[:per_page] 
       per_page = params[:per_page].to_s.to_i
       session[:per_page] = per_page
     elsif session[:per_page]
@@ -457,8 +457,8 @@ class ApplicationController < ActionController::Base
     limit = options[:limit].to_i
     if limit < 1
       limit = 25
-    elsif limit > 100
-      limit = 100
+    elsif limit > 10000
+      limit = 10000
     end
     if offset.nil? && options[:page].present?
       offset = (options[:page].to_i - 1) * limit
